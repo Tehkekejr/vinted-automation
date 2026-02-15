@@ -1,0 +1,45 @@
+[
+  {
+    "title": "T-shirt Nike noir taille M",
+    "brand": "Nike",
+    "type": "T-shirt",
+    "size": "M",
+    "color": "Noir",
+    "condition": "Très bon état",
+    "description": "T-shirt Nike en coton, peu porté, comme neuf. Parfait pour le sport ou la détente.",
+    "price": 15,
+    "photos": [
+      "photos/tshirt_nike_1.jpg",
+      "photos/tshirt_nike_2.jpg"
+    ]
+  },
+  {
+    "title": "Jean Levi's 501 taille 32",
+    "brand": "Levi's",
+    "type": "Jean",
+    "size": "32",
+    "color": "Bleu",
+    "condition": "Bon état",
+    "description": "Jean Levi's 501 classique, coupe droite. Légères traces d'usure mais encore en excellent état.",
+    "price": 35,
+    "photos": [
+      "photos/jean_levis_1.jpg",
+      "photos/jean_levis_2.jpg",
+      "photos/jean_levis_3.jpg"
+    ]
+  },
+  {
+    "title": "Veste Adidas vintage taille L",
+    "brand": "Adidas",
+    "type": "Veste",
+    "size": "L",
+    "color": "Bleu et blanc",
+    "condition": "Très bon état",
+    "description": "Veste de survêtement Adidas vintage années 90. Pièce de collection en excellent état.",
+    "price": 45,
+    "photos": [
+      "photos/veste_adidas_1.jpg",
+      "photos/veste_adidas_2.jpg"
+    ]
+  }
+]
