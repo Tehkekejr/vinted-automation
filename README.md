@@ -1,3 +1,17 @@
+> [!CAUTION]
+> ## ⚠️ AVERTISSEMENT IMPORTANT - RISQUE DE BAN
+>
+> **Ce script automatise Vinted et VIOLE leurs conditions d'utilisation.**
+>
+> **RISQUES :**
+> - 🚫 **Suspension ou BAN PERMANENT de votre compte Vinted**
+> - 🚫 **Perte définitive de l'accès à vos annonces et messages**
+> - 🚫 **Blocage de votre numéro de téléphone et email**
+>
+> **UTILISEZ CE SCRIPT À VOS PROPRES RISQUES. L'auteur n'est pas responsable des conséquences.**
+>
+> Ce repository est **privé** et **uniquement à des fins éducatives**.
+
 # vinted-automation
 
 Script Python pour automatiser la description et l'upload de vêtements sur Vinted
