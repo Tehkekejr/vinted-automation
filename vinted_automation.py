@@ -69,7 +69,7 @@ class VintedBot:
                 )
                 for p in photos[:5]:
                     file_input.send_keys(os.path.abspath(p))
-                    self.wait(3, 5)
+                self.wait(3, 5)
 
             # Titre
             title_el = WebDriverWait(self.driver, 10).until(
@@ -80,7 +80,6 @@ class VintedBot:
             # Description
             desc_el = self.driver.find_element(By.NAME, "description")
             description = f"{item.get('brand', '')} - {item.get('size', '')}
-
 {item.get('description', 'Très bon état.')}"
             self.type_human(desc_el, description)
 
@@ -130,10 +129,10 @@ class VintedBot:
                             time.sleep(wait_time)
             else:
                 print(f"Fichier {items_file} introuvable.")
-        
-        print("Travail terminé.")
-        self.wait(5, 10)
-        self.driver.quit()
+            
+            print("Travail terminé.")
+            self.wait(5, 10)
+            self.driver.quit()
 
 if __name__ == '__main__':
     VintedBot().run()
