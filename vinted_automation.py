@@ -22,7 +22,6 @@ class VintedBot:
     def start(self):
         print("Démarrage du navigateur sécurisé...")
         options = uc.ChromeOptions()
-        # On peut ajouter --headless ici plus tard si tout fonctionne
         self.driver = uc.Chrome(options=options)
         self.driver.set_window_size(1280, 800)
 
@@ -38,68 +37,18 @@ class VintedBot:
     def login(self):
         print("Navigation vers Vinted...")
         self.driver.get("https://www.vinted.fr")
-        self.wait(4, 7)
         
-        try:
-            # Accepter les cookies
-            cookie_btn = WebDriverWait(self.driver, 5).until(
-                EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
-            )
-            cookie_btn.click()
-            self.wait(1, 2)
-        except: pass
-
-        try:
-            # Bouton de connexion
-            login_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-testid="header--login-button"]'))
-            )
-            login_btn.click()
-            self.wait(2, 4)
-            
-            # Cliquer sur "Continuer avec l'e-mail"
-            try:
-                email_opt = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'e-mail')]"))
-                )
-                email_opt.click()
-                self.wait(1, 2)
-            except: pass
-
-            # Identifiants
-            email = self.config.get('email', '')
-            password = self.config.get('password', '')
-            
-            if not email or not password:
-                print("ERREUR: Email ou mot de passe manquant dans config.json")
-                return False
-
-            email_in = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.NAME, "username"))
-            )
-            self.type_human(email_in, email)
-            
-            pass_in = self.driver.find_element(By.NAME, "password")
-            self.type_human(pass_in, password)
-            
-            self.driver.find_element(By.XPATH, "//button[@type='submit']").click()
-            print("Vérification de la connexion...")
-            self.wait(7, 12)
-            
-            # Vérifier si on est connecté (recherche de l'icône profil)
-            try:
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="header--profile-menu-button"]'))
-                )
-                print("Connecté avec succès !")
-                return True
-            except:
-                print("La connexion semble avoir échoué ou un Captcha est apparu.")
-                return False
-                
-        except Exception as e:
-            print(f"Erreur lors de la connexion : {e}")
-            return False
+        print("
+" + "="*40)
+        print("ACTION REQUISE : CONNEXION MANUELLE")
+        print("1. Dans la fenêtre Chrome, connectez-vous à votre compte.")
+        print("2. Une fois connecté et sur la page d'accueil, revenez ici.")
+        print("="*40 + "
+")
+        
+        input(">>> Appuyez sur ENTREE pour continuer le script...")
+        self.wait(2, 4)
+        return True
 
     def upload_as_draft(self, item):
         print(f"
@@ -143,22 +92,19 @@ class VintedBot:
 
             # --- SAUVEGARDE EN BROUILLON ---
             print("Action : Enregistrement du brouillon...")
-            
-            # Méthode : Cliquer sur le bouton 'X' ou 'Quitter'
             try:
-                # Sélecteur typique du bouton fermer sur la page de dépôt
+                # Tentative de clic sur le bouton fermer
                 close_btn = self.driver.find_element(By.CSS_SELECTOR, "button[aria-label='Quitter'], button[aria-label='Annuler']")
                 close_btn.click()
                 self.wait(2, 3)
                 
-                # Attendre le bouton de confirmation "Enregistrer le brouillon"
                 save_btn = WebDriverWait(self.driver, 5).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Enregistrer')]"))
                 )
                 save_btn.click()
                 print("Succès : Article sauvegardé dans les brouillons.")
             except:
-                print("Méthode de secours : Navigation forcée pour déclencher l'auto-save...")
+                print("Méthode de secours : Navigation forcée pour auto-save...")
                 self.driver.get("https://www.vinted.fr/items/drafts")
                 self.wait(4, 6)
             
@@ -189,5 +135,5 @@ class VintedBot:
         self.wait(5, 10)
         self.driver.quit()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     VintedBot().run()
