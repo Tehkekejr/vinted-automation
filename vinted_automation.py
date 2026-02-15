@@ -8,6 +8,7 @@ import os
 import json
 import time
 import random
+import glob
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -128,6 +129,18 @@ Couleur: {color}
 Prix: {price}€
 """
         return template.format(**item_data)
+
+    def get_photos_from_folder(self, folder_path):
+        """Get all image files from a specific folder"""
+        if not folder_path or not os.path.exists(folder_path):
+            return []
+        
+        extensions = ['*.jpg', '*.jpeg', '*.png', '*.JPG', '*.JPEG', '*.PNG']
+        photos = []
+        for ext in extensions:
+            photos.extend(glob.glob(os.path.join(folder_path, ext)))
+        
+        return sorted(photos)
     
     def upload_item(self, item_data):
         """Upload a clothing item with strong anti-ban protocol"""
@@ -139,13 +152,20 @@ Prix: {price}€
             self.driver.get("https://www.vinted.fr/items/new")
             self.human_wait(4, 8)
             
-            # Upload photos (one by one with pauses)
-            if 'photos' in item_data and item_data['photos']:
+            # Determine photos to upload
+            photos = []
+            if 'photos_folder' in item_data:
+                photos = self.get_photos_from_folder(item_data['photos_folder'])
+            elif 'photos' in item_data:
+                photos = item_data['photos']
+
+            # Upload photos
+            if photos:
                 photo_input = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, "//input[@type='file']"))
                 )
                 
-                for photo_path in item_data['photos']:
+                for photo_path in photos:
                     if os.path.exists(photo_path):
                         print(f"Ajout de la photo : {photo_path}")
                         photo_input.send_keys(os.path.abspath(photo_path))
@@ -179,7 +199,7 @@ Prix: {price}€
             
             self.human_wait(5, 10) # Review the form before submitting
             
-            # SUBMISSION (Irreversible action - usually would click here)
+            # SUBMISSION
             print("Formulaire prêt pour la validation.")
             # self.driver.find_element(By.XPATH, "//button[@type='submit']").click()
             
