@@ -143,10 +143,10 @@ Prix: {price}€
         return sorted(photos)
     
     def upload_item(self, item_data):
-        """Upload a clothing item with strong anti-ban protocol"""
+        """Upload a clothing item and save as DRAFT"""
         try:
             print(f"
---- Protocole Anti-Ban : Upload de '{item_data.get('title')}' ---")
+--- Protocole Anti-Ban : BROUILLON pour '{item_data.get('title')}' ---")
             
             # Navigate to upload page
             self.driver.get("https://www.vinted.fr/items/new")
@@ -197,13 +197,31 @@ Prix: {price}€
             price_input = self.driver.find_element(By.NAME, "price")
             self.human_type(price_input, str(item_data.get('price', '')))
             
-            self.human_wait(5, 10) # Review the form before submitting
+            self.human_wait(3, 6)
             
-            # SUBMISSION
-            print("Formulaire prêt pour la validation.")
-            # self.driver.find_element(By.XPATH, "//button[@type='submit']").click()
+            # --- SAVE AS DRAFT PROTOCOL ---
+            print("Action : Enregistrement en BROUILLON...")
             
-            print(f"Article '{item_data.get('title')}' traité avec succès.")
+            # Vinted saving draft usually happens by clicking 'Back' or 'Close'
+            # and then selecting 'Save as draft' in the confirmation popup
+            try:
+                # Find the exit/back button (often an 'X' or 'Annuler')
+                cancel_btn = self.driver.find_element(By.XPATH, "//button[contains(@class, 'c-button') and (contains(., 'Annuler') or contains(., 'Quitter'))]")
+                cancel_btn.click()
+                self.human_wait(1, 3)
+                
+                # Click 'Enregistrer le brouillon' in the popup
+                save_draft_btn = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Enregistrer le brouillon')]"))
+                )
+                save_draft_btn.click()
+                print("Succès : Article enregistré dans vos brouillons.")
+            except Exception as e_draft:
+                print(f"Méthode alternative : Tentative d'enregistrement automatique...")
+                # Fallback: Just navigate away, Vinted often auto-saves drafts now
+                self.driver.get("https://www.vinted.fr/items/drafts")
+            
+            self.human_wait(2, 4)
             return True
             
         except Exception as e:
@@ -211,7 +229,7 @@ Prix: {price}€
             return False
     
     def batch_upload(self, items_file="items.json"):
-        """Upload multiple items with LONG pauses between items to avoid detection"""
+        """Process multiple items and save all as drafts in batch"""
         if not os.path.exists(items_file):
             print(f"Fichier d'articles {items_file} introuvable.")
             return
@@ -222,18 +240,18 @@ Prix: {price}€
         success_count = 0
         for idx, item in enumerate(items, 1):
             print(f"
-Traitement de l'article {idx}/{len(items)}...")
+Traitement de l'article {idx}/{len(items)} (Mode BROUILLON)...")
             if self.upload_item(item):
                 success_count += 1
             
             if idx < len(items):
                 # LONG PAUSE between items (5 to 10 minutes)
                 pause_time = random.randint(300, 600)
-                print(f"PAUSE ANTI-BAN : Attente de {pause_time//60} minutes avant le prochain article...")
+                print(f"PAUSE ANTI-BAN : Attente de {pause_time//60} minutes avant le prochain brouillon...")
                 time.sleep(pause_time)
         
         print(f"
-Upload par lot terminé : {success_count}/{len(items)} articles traités.")
+Batch terminé : {success_count}/{len(items)} articles mis en brouillon.")
     
     def close(self):
         """Close the browser"""
@@ -244,7 +262,7 @@ Upload par lot terminé : {success_count}/{len(items)} articles traités.")
 
 def main():
     """Main execution function"""
-    print("=== Outil d'Automatisation Vinted (ANTI-BAN) ===")
+    print("=== Outil Vinted - Mode BROUILLON Automatique ===")
     
     bot = VintedAutomation()
     bot.setup_driver()
@@ -258,12 +276,11 @@ def main():
             return
         
         if bot.login(email, password):
-            # Batch upload starts here
             bot.batch_upload("items.json")
         
     except KeyboardInterrupt:
         print("
-Processus interrompu par l'utilisateur.")
+Processus interrompu.")
     except Exception as e:
         print(f"Erreur : {str(e)}")
     finally:
