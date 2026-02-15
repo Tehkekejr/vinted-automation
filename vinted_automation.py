@@ -1,291 +1,193 @@
 #!/usr/bin/env python3
-"""
-Vinted Automation Script with ANTI-BAN Protocol
-Automate description and upload of clothing items to Vinted while mimicking human behavior
-"""
-
 import os
 import json
 import time
 import random
 import glob
-from selenium import webdriver
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from pathlib import Path
 
-
-class VintedAutomation:
-    """Main class for Vinted automation with human-like behavior"""
-    
-    def __init__(self, config_file="config.json"):
-        """Initialize the automation bot"""
-        self.config = self.load_config(config_file)
-        self.driver = None
-        
-    def load_config(self, config_file):
-        """Load configuration from JSON file"""
-        if os.path.exists(config_file):
-            with open(config_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+class VintedBot:
+    def __init__(self, config_path="config.json"):
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                self.config = json.load(f)
         else:
-            print(f"Config file {config_file} not found. Using defaults.")
-            return {}
-    
-    def setup_driver(self):
-        """Setup Selenium WebDriver with anti-detection measures"""
-        options = webdriver.ChromeOptions()
-        options.add_argument('--start-maximized')
-        
-        # Anti-detection: Modify user agent and exclude automation switches
-        options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        
-        self.driver = webdriver.Chrome(options=options)
-        
-        # Anti-detection: Remove navigator.webdriver flag
-        self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        
-        return self.driver
+            self.config = {}
+        self.driver = None
 
-    def human_wait(self, min_sec=2, max_sec=5):
-        """Random wait to mimic human pauses"""
-        wait_time = random.uniform(min_sec, max_sec)
-        print(f"Humain : Pause de {wait_time:.2f} secondes...")
-        time.sleep(wait_time)
+    def start(self):
+        print("Démarrage du navigateur sécurisé...")
+        options = uc.ChromeOptions()
+        # On peut ajouter --headless ici plus tard si tout fonctionne
+        self.driver = uc.Chrome(options=options)
+        self.driver.set_window_size(1280, 800)
 
-    def human_type(self, element, text):
-        """Type text character by character with random delays"""
+    def wait(self, a=2, b=5):
+        time.sleep(random.uniform(a, b))
+
+    def type_human(self, element, text):
         for char in text:
             element.send_keys(char)
-            time.sleep(random.uniform(0.05, 0.2)) # Realistic typing speed
-        self.human_wait(0.5, 1.5)
+            time.sleep(random.uniform(0.05, 0.12))
+        self.wait(1, 2)
 
-    def human_scroll(self):
-        """Simulate human scrolling behavior"""
-        scroll_amount = random.randint(200, 600)
-        self.driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
-        self.human_wait(1, 3)
-
-    def login(self, email, password):
-        """Login to Vinted account with human-like interactions"""
+    def login(self):
         print("Navigation vers Vinted...")
         self.driver.get("https://www.vinted.fr")
-        self.human_wait(3, 6)
+        self.wait(4, 7)
         
-        # Accept cookies if present
         try:
-            cookie_btn = self.driver.find_element(By.ID, "onetrust-accept-btn-handler")
+            # Accepter les cookies
+            cookie_btn = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
+            )
             cookie_btn.click()
-            self.human_wait(1, 2)
-        except:
-            pass
-            
+            self.wait(1, 2)
+        except: pass
+
         try:
-            # Click on login button
+            # Bouton de connexion
             login_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[contains(@class, 'c-button') and contains(., 'Se connecter')]"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-testid="header--login-button"]'))
             )
             login_btn.click()
-            self.human_wait(2, 4)
+            self.wait(2, 4)
             
-            # Enter email
-            email_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.ID, "username"))
+            # Cliquer sur "Continuer avec l'e-mail"
+            try:
+                email_opt = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'e-mail')]"))
+                )
+                email_opt.click()
+                self.wait(1, 2)
+            except: pass
+
+            # Identifiants
+            email = self.config.get('email', '')
+            password = self.config.get('password', '')
+            
+            if not email or not password:
+                print("ERREUR: Email ou mot de passe manquant dans config.json")
+                return False
+
+            email_in = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.NAME, "username"))
             )
-            self.human_type(email_input, email)
+            self.type_human(email_in, email)
             
-            # Enter password
-            password_input = self.driver.find_element(By.ID, "password")
-            self.human_type(password_input, password)
+            pass_in = self.driver.find_element(By.NAME, "password")
+            self.type_human(pass_in, password)
             
-            # Click login
-            submit_btn = self.driver.find_element(By.XPATH, "//button[@type='submit']")
-            submit_btn.click()
+            self.driver.find_element(By.XPATH, "//button[@type='submit']").click()
+            print("Vérification de la connexion...")
+            self.wait(7, 12)
             
-            print("Connexion réussie !")
-            self.human_wait(4, 7)
-            return True
-            
+            # Vérifier si on est connecté (recherche de l'icône profil)
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="header--profile-menu-button"]'))
+                )
+                print("Connecté avec succès !")
+                return True
+            except:
+                print("La connexion semble avoir échoué ou un Captcha est apparu.")
+                return False
+                
         except Exception as e:
-            print(f"Échec de la connexion : {str(e)}")
+            print(f"Erreur lors de la connexion : {e}")
             return False
-    
-    def generate_description(self, item_data):
-        """Generate item description from data"""
-        template = """
-{brand} - {type}
 
-Taille: {size}
-Couleur: {color}
-État: {condition}
-
-{description}
-
-Prix: {price}€
-"""
-        return template.format(**item_data)
-
-    def get_photos_from_folder(self, folder_path):
-        """Get all image files from a specific folder"""
-        if not folder_path or not os.path.exists(folder_path):
-            return []
-        
-        extensions = ['*.jpg', '*.jpeg', '*.png', '*.JPG', '*.JPEG', '*.PNG']
-        photos = []
-        for ext in extensions:
-            photos.extend(glob.glob(os.path.join(folder_path, ext)))
-        
-        return sorted(photos)
-    
-    def upload_item(self, item_data):
-        """Upload a clothing item and save as DRAFT"""
+    def upload_as_draft(self, item):
+        print(f"
+--- Préparation de l'article : {item.get('title')} ---")
         try:
-            print(f"
---- Protocole Anti-Ban : BROUILLON pour '{item_data.get('title')}' ---")
-            
-            # Navigate to upload page
             self.driver.get("https://www.vinted.fr/items/new")
-            self.human_wait(4, 8)
-            
-            # Determine photos to upload
-            photos = []
-            if 'photos_folder' in item_data:
-                photos = self.get_photos_from_folder(item_data['photos_folder'])
-            elif 'photos' in item_data:
-                photos = item_data['photos']
+            self.wait(5, 8)
 
-            # Upload photos
+            # Photos
+            photos = item.get('photos', [])
+            if 'photos_folder' in item and os.path.exists(item['photos_folder']):
+                photos = glob.glob(os.path.join(item['photos_folder'], "*"))
+            
             if photos:
-                photo_input = WebDriverWait(self.driver, 10).until(
+                print(f"Ajout de {len(photos[:5])} photos...")
+                file_input = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, "//input[@type='file']"))
                 )
-                
-                for photo_path in photos:
-                    if os.path.exists(photo_path):
-                        print(f"Ajout de la photo : {photo_path}")
-                        photo_input.send_keys(os.path.abspath(photo_path))
-                        self.human_wait(2, 5) # Time for photo to process
-            
-            self.human_scroll()
-            
-            # Fill in title
-            title_input = WebDriverWait(self.driver, 10).until(
+                for p in photos[:5]:
+                    file_input.send_keys(os.path.abspath(p))
+                    self.wait(3, 5)
+
+            # Titre
+            title_el = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.NAME, "title"))
             )
-            self.human_type(title_input, item_data.get('title', ''))
+            self.type_human(title_el, item.get('title', ''))
             
-            # Fill in description
-            description = self.generate_description(item_data)
-            description_input = self.driver.find_element(By.NAME, "description")
-            self.human_type(description_input, description)
+            # Description
+            desc_el = self.driver.find_element(By.NAME, "description")
+            description = f"{item.get('brand', '')} - {item.get('size', '')}
+
+{item.get('description', 'Très bon état.')}"
+            self.type_human(desc_el, description)
+
+            # Prix
+            price_el = self.driver.find_element(By.NAME, "price")
+            self.type_human(price_el, str(item.get('price', '10')))
             
-            self.human_scroll()
+            self.wait(3, 5)
+
+            # --- SAUVEGARDE EN BROUILLON ---
+            print("Action : Enregistrement du brouillon...")
             
-            # Select brand
-            if 'brand' in item_data:
-                brand_input = self.driver.find_element(By.NAME, "brand")
-                self.human_type(brand_input, item_data['brand'])
-                self.human_wait(1, 3)
-                brand_input.send_keys(Keys.RETURN)
-            
-            # Fill in price
-            price_input = self.driver.find_element(By.NAME, "price")
-            self.human_type(price_input, str(item_data.get('price', '')))
-            
-            self.human_wait(3, 6)
-            
-            # --- SAVE AS DRAFT PROTOCOL ---
-            print("Action : Enregistrement en BROUILLON...")
-            
-            # Vinted saving draft usually happens by clicking 'Back' or 'Close'
-            # and then selecting 'Save as draft' in the confirmation popup
+            # Méthode : Cliquer sur le bouton 'X' ou 'Quitter'
             try:
-                # Find the exit/back button (often an 'X' or 'Annuler')
-                cancel_btn = self.driver.find_element(By.XPATH, "//button[contains(@class, 'c-button') and (contains(., 'Annuler') or contains(., 'Quitter'))]")
-                cancel_btn.click()
-                self.human_wait(1, 3)
+                # Sélecteur typique du bouton fermer sur la page de dépôt
+                close_btn = self.driver.find_element(By.CSS_SELECTOR, "button[aria-label='Quitter'], button[aria-label='Annuler']")
+                close_btn.click()
+                self.wait(2, 3)
                 
-                # Click 'Enregistrer le brouillon' in the popup
-                save_draft_btn = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Enregistrer le brouillon')]"))
+                # Attendre le bouton de confirmation "Enregistrer le brouillon"
+                save_btn = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Enregistrer')]"))
                 )
-                save_draft_btn.click()
-                print("Succès : Article enregistré dans vos brouillons.")
-            except Exception as e_draft:
-                print(f"Méthode alternative : Tentative d'enregistrement automatique...")
-                # Fallback: Just navigate away, Vinted often auto-saves drafts now
+                save_btn.click()
+                print("Succès : Article sauvegardé dans les brouillons.")
+            except:
+                print("Méthode de secours : Navigation forcée pour déclencher l'auto-save...")
                 self.driver.get("https://www.vinted.fr/items/drafts")
+                self.wait(4, 6)
             
-            self.human_wait(2, 4)
             return True
-            
         except Exception as e:
-            print(f"Échec de l'upload : {str(e)}")
+            print(f"Erreur lors de l'upload : {e}")
             return False
-    
-    def batch_upload(self, items_file="items.json"):
-        """Process multiple items and save all as drafts in batch"""
-        if not os.path.exists(items_file):
-            print(f"Fichier d'articles {items_file} introuvable.")
-            return
-        
-        with open(items_file, 'r', encoding='utf-8') as f:
-            items = json.load(f)
-        
-        success_count = 0
-        for idx, item in enumerate(items, 1):
-            print(f"
-Traitement de l'article {idx}/{len(items)} (Mode BROUILLON)...")
-            if self.upload_item(item):
-                success_count += 1
-            
-            if idx < len(items):
-                # LONG PAUSE between items (5 to 10 minutes)
-                pause_time = random.randint(300, 600)
-                print(f"PAUSE ANTI-BAN : Attente de {pause_time//60} minutes avant le prochain brouillon...")
-                time.sleep(pause_time)
-        
-        print(f"
-Batch terminé : {success_count}/{len(items)} articles mis en brouillon.")
-    
-    def close(self):
-        """Close the browser"""
-        if self.driver:
-            self.driver.quit()
-            print("Navigateur fermé.")
 
-
-def main():
-    """Main execution function"""
-    print("=== Outil Vinted - Mode BROUILLON Automatique ===")
-    
-    bot = VintedAutomation()
-    bot.setup_driver()
-    
-    try:
-        email = bot.config.get('email', '')
-        password = bot.config.get('password', '')
+    def run(self):
+        self.start()
+        if self.login():
+            items_file = "items.json"
+            if os.path.exists(items_file):
+                with open(items_file, "r", encoding='utf-8') as f:
+                    items = json.load(f)
+                
+                for idx, item in enumerate(items, 1):
+                    print(f"Traitement article {idx}/{len(items)}")
+                    if self.upload_as_draft(item):
+                        if idx < len(items):
+                            wait_time = random.randint(120, 300)
+                            print(f"Pause de {wait_time}s entre les articles...")
+                            time.sleep(wait_time)
+            else:
+                print(f"Fichier {items_file} introuvable.")
         
-        if not email or not password:
-            print("Veuillez ajouter vos identifiants dans config.json")
-            return
-        
-        if bot.login(email, password):
-            bot.batch_upload("items.json")
-        
-    except KeyboardInterrupt:
-        print("
-Processus interrompu.")
-    except Exception as e:
-        print(f"Erreur : {str(e)}")
-    finally:
-        bot.close()
-
+        print("Travail terminé.")
+        self.wait(5, 10)
+        self.driver.quit()
 
 if __name__ == "__main__":
-    main()
+    VintedBot().run()
